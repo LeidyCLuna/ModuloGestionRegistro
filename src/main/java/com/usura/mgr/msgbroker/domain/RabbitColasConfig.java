@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitColasConfig {
 
     @Bean("rutaMGR")
-    public RabbitBindingRoute rutaSGA(
+    public RabbitBindingRoute rutaMGR(
             @Value("${rabbitmq.routing.mgr.exchange}")
             String exchange,
             @Value("${rabbitmq.routing.mgr.routingKey}")

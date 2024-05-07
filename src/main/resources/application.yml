@@ -13,7 +13,7 @@ spring:
       maximum-pool-size: 10
       max-lifetime: 1800000
       connection-timeout: 60000
-      pool-name: "sga-hikari-pool"
+      pool-name: "mgr-hikari-pool"
   jpa:
     hibernate:
       ddl-auto: update
@@ -34,9 +34,9 @@ rabbitmq:
   username : guest
   password : guest
   sslenabled: false
-  brokerTag: Broker ARL
+  brokerTag: Broker MGR
   routing:
-    discordia:
-      queue: arl.estudiante.queue
-      exchange: arl.estudiante.ex
-      routingKey: arl.estudiante.queue
+    mgr:
+      queue: sga.estudiantes.registro.queue
+      exchange: sga.estudiantes.registro.ex
+      routingKey: sga.estudiantes.registro.queue
