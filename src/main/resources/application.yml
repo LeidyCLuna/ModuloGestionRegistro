@@ -2,7 +2,9 @@ server:
   error:
     include-message: always
   port: 9009
-
+client:
+  SGA:
+    url: http://localhost:9000/sga
 spring:
   profiles:
     active: dev

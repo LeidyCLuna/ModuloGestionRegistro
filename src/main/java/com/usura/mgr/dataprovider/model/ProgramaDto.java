@@ -1,4 +1,4 @@
-package com.usura.mgr.dto;
+package com.usura.mgr.dataprovider.model;
 
 import lombok.*;
 
@@ -7,10 +7,11 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CursoDto {
-    private int idCurso;
+public class ProgramaDto {
+    private int  idPrograma;
     private String nombre;
     private String titulo;
-    private int horas;
+    private int cretidos;
+    private int semestres;
     private String registroMen;
 }

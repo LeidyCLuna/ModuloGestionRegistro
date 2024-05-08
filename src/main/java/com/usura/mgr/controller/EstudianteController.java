@@ -33,11 +33,24 @@ public class EstudianteController {
         try {
             if (estudianteResponse != null) {
                 return ResponseEntity.status(HttpStatus.OK).body(new ObjectMapper().writeValueAsString(estudianteResponse));
-            }else
+            } else
                 return ResponseEntity.status(HttpStatus.OK).body("El estudiante ya se encuentra registrado");
 
-        } catch(JsonProcessingException e){
-                throw new RuntimeException(e);
-            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
     }
+
+
+   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<EstudianteDto> consultarEstudiante(@RequestParam("documento") String documento) {
+        try {
+
+            EstudianteDto estudianteDto = iEstudianteService.consultarEstudiante(documento);
+            return ResponseEntity.status(HttpStatus.OK).body(estudianteDto);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+
