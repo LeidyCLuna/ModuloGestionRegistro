@@ -1,21 +1,23 @@
-package com.usura.mgr.configuracion;
+package com.usura.mgr.msgbroker.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.ReturnedMessage;
 
 import java.io.Serializable;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
-public class ErrorBrokerEvent implements Serializable {
+public class ErrorBrokerEvento implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Message message;
     private int replyCode;
     private String replyText;
-    private  String Exchange;
+    private String exchange;
     private String routingKey;
-
 
 }

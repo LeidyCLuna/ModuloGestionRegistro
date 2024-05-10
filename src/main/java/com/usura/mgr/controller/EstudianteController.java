@@ -35,9 +35,9 @@ public class EstudianteController {
         EstudianteDto estudianteResponse = iEstudianteService.enviarEstudiante(estudianteDto);
         try {
             if (estudianteResponse != null) {
-                return ResponseEntity.status(HttpStatus.OK).body(new EstudianteResponse( "Estudiante registrado exitosamente", estudianteDto));
+                return ResponseEntity.status(HttpStatus.OK).body(new EstudianteResponse("Estudiante enviado para ser registrado", estudianteDto));
             } else
-                return ResponseEntity.status(HttpStatus.OK).body(new EstudianteResponse( "El estudiante ya se encuentra registrado",estudianteDto));
+                return ResponseEntity.status(HttpStatus.OK).body(new EstudianteResponse("El estudiante ya se encuentra registrado", estudianteDto));
 
         } catch (Exception e) {
             LOGGER.error("Error al convertir el objeto EstudianteDto a formato JSON.", e);
@@ -53,7 +53,7 @@ public class EstudianteController {
             if (estudianteDto != null) {
                 return ResponseEntity.status(HttpStatus.OK).body(new EstudianteResponse("Estudiante encontrado", estudianteDto));
             } else
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new EstudianteResponse( "Estudiante no encontrado para el documento: " + documento, null));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new EstudianteResponse("Estudiante no encontrado para el documento: " + documento, null));
 
         } catch (Exception e) {
             LOGGER.error("Error al consultar estudiante.", e);

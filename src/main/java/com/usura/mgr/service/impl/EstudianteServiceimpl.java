@@ -1,5 +1,6 @@
 package com.usura.mgr.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.usura.mgr.dataprovider.client.ISgaClient;
 import com.usura.mgr.dto.EstudianteDto;
 import com.usura.mgr.msgbroker.RabbitQueueSender;
@@ -8,6 +9,8 @@ import com.usura.mgr.service.IEstudianteService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -29,12 +32,21 @@ public class EstudianteServiceimpl implements IEstudianteService {
         try {
             EstudianteDto respuesta = consultarEstudiante(estudianteDto.getDocumento());
             if (respuesta == null) {
-                rabbitQueueSender.send(estudianteDto);
+                ObjectMapper objectMapper = new ObjectMapper();
+                byte[] body = objectMapper.writeValueAsBytes(estudianteDto);
+
+                // Crea las propiedades del mensaje
+                MessageProperties properties = new MessageProperties();
+
+                // Crea el mensaje con el cuerpo y propiedades
+                Message message = new Message(body, properties);
+
+                rabbitQueueSender.send(message);
                 LOGGER.info("El estudiante es enviado a la rabbitMq para su creacion");
                 return estudianteDto;
             } else {
                 LOGGER.info("El estudiante ya existe");
-               return null;
+                return null;
             }
         } catch (Exception ex) {
             throw new RuntimeException("Ocurrió un error al momento de encolar la solicitud de registro");
