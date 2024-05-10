@@ -2,14 +2,18 @@ package com.usura.mgr.configuracion;
 
 
 import com.usura.mgr.msgbroker.domain.RabbitConexionProps;
+import com.usura.mgr.msgbroker.event.BrokerEvento;
+import com.usura.mgr.msgbroker.event.ErrorBrokerEvento;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.BrokerEvent;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.AbstractJackson2MessageConverter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -29,29 +33,29 @@ public class RabbitFabricaConfig {
     private final ApplicationEventPublisher publisher;
     private static final Logger LOG = LoggerFactory.getLogger(RabbitFabricaConfig.class);
 
-    private  static  final String CONSUMER_NAME = "nombreconsumidor";
+    private static final String CONSUMER_NAME = "nombreconsumidor";
 
     @Bean("conexionRabbit")
-    public ConnectionFactory conexionRabbitDiscodia(@Qualifier("rabbitConexionProps") RabbitConexionProps rabbitConexionProps){
+    public ConnectionFactory conexionRabbitDiscodia(@Qualifier("rabbitConexionProps") RabbitConexionProps rabbitConexionProps) {
         return fabricaConexionRabbit(rabbitConexionProps);
     }
 
     @Bean("productorRabbit")
-    public RabbitTemplate productorRabbitDiscordia(@Qualifier("conexionRabbit") ConnectionFactory connectionFactory){
+    public RabbitTemplate productorRabbitDiscordia(@Qualifier("conexionRabbit") ConnectionFactory connectionFactory) {
         return fabricaProductorRabbit(connectionFactory, jsonMessageConverter());
     }
 
     @Bean("listenerRabbit")
-    public SimpleRabbitListenerContainerFactory listenerRabbitDiscodia(@Qualifier("conexionRabbit") ConnectionFactory connectionFactory){
+    public SimpleRabbitListenerContainerFactory listenerRabbitDiscodia(@Qualifier("conexionRabbit") ConnectionFactory connectionFactory) {
         return hospSyncFactory(connectionFactory, jsonMessageConverter());
     }
 
     @Bean
-    public Jackson2JsonMessageConverter jsonMessageConverter(){
+    public Jackson2JsonMessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
-    public ConnectionFactory fabricaConexionRabbit(RabbitConexionProps rabbitConexionProps){
+    public ConnectionFactory fabricaConexionRabbit(RabbitConexionProps rabbitConexionProps) {
         com.rabbitmq.client.ConnectionFactory fabrica = new com.rabbitmq.client.ConnectionFactory();
         fabrica.setHost(rabbitConexionProps.getHost());
         fabrica.setPort(rabbitConexionProps.getPort());
@@ -62,21 +66,21 @@ public class RabbitFabricaConfig {
         fabrica.setConnectionTimeout(10000);
 
         try {
-            if(rabbitConexionProps.isSslenabled()) fabrica.useSslProtocol();
-        }catch (KeyManagementException | NoSuchAlgorithmException e){
-            LOG.error("{}: Error creando la conexion con rabbit sslProtocol, Error: {}", rabbitConexionProps.getBrokerTag(),e.getMessage());
+            if (rabbitConexionProps.isSslenabled()) fabrica.useSslProtocol();
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            LOG.error("{}: Error creando la conexion con rabbit sslProtocol, Error: {}", rabbitConexionProps.getBrokerTag(), e.getMessage());
         }
         CachingConnectionFactory fabricaConexionRabbit = new CachingConnectionFactory(fabrica);
         fabricaConexionRabbit.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
         fabricaConexionRabbit.setPublisherReturns(true);
 
 
-
         return fabricaConexionRabbit;
     }
 
-    public RabbitTemplate fabricaProductorRabbit(final ConnectionFactory connectionFactory, AbstractJackson2MessageConverter messageConverter){
+    public RabbitTemplate fabricaProductorRabbit(final ConnectionFactory connectionFactory, AbstractJackson2MessageConverter messageConverter) {
         final RabbitTemplate fabricaProductor = new RabbitTemplate(connectionFactory);
+
 
         //formato del mensaje que se publicara (JSON,XML,etc)
         fabricaProductor.setMessageConverter(messageConverter);
@@ -84,13 +88,22 @@ public class RabbitFabricaConfig {
         //confirmar si el mesaje fue recibido correctamente
         fabricaProductor.setMandatory(true);
 
-        /*fabricaProductor.setReturnsCallback((message,replyCode,replyText,exchange,routingKey)->
-                publisher.publishEvent(new BrokerEvent(new ErrorBrokerEvent(message,replyCode,replyText,exchange,routingKey))));*/
+        // Callback para identificar errores
+        fabricaProductor.setReturnsCallback(returnedMessage -> {
+            Message message = returnedMessage.getMessage();
+            int replyCode = returnedMessage.getReplyCode();
+            String replyText = returnedMessage.getReplyText();
+            String exchange = returnedMessage.getExchange();
+            String routingKey = returnedMessage.getRoutingKey();
 
-        return fabricaProductor;
+            ErrorBrokerEvento errorEvent = new ErrorBrokerEvento(message, replyCode, replyText, exchange, routingKey);
+            publisher.publishEvent(new BrokerEvento(errorEvent));
+        });
+            return fabricaProductor;
+
     }
 
-    public SimpleRabbitListenerContainerFactory hospSyncFactory(ConnectionFactory connectionFactory, AbstractJackson2MessageConverter messageConverter){
+    public SimpleRabbitListenerContainerFactory hospSyncFactory(ConnectionFactory connectionFactory, AbstractJackson2MessageConverter messageConverter) {
 
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setMessageConverter(messageConverter);
@@ -105,13 +118,12 @@ public class RabbitFabricaConfig {
 
         factory.setMissingQueuesFatal(false);
         factory.setConsumerTagStrategy(
-                q-> CONSUMER_NAME.concat(".").concat(System.getProperty("user.name")));
+                q -> CONSUMER_NAME.concat(".").concat(System.getProperty("user.name")));
 
         return factory;
 
 
     }
-
 
 
 }
